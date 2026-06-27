@@ -1,0 +1,24 @@
+# Binaries
+/bin/
+/dist/
+opentag
+*.exe
+
+# Go
+*.test
+*.out
+vendor/
+
+# Local config & secrets
+config.yaml
+config.local.yaml
+.env
+*.local
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Claude Code local settings
+.claude/

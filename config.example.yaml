@@ -1,0 +1,49 @@
+# OpenTag example configuration.
+# Copy to config.yaml and fill in. ${ENV} references are expanded from the
+# environment, so keep secrets out of the file.
+
+slack:
+  # App-level token (xapp-...) for Socket Mode, and bot token (xoxb-...).
+  appToken: ${SLACK_APP_TOKEN}
+  botToken: ${SLACK_BOT_TOKEN}
+
+kagent:
+  # Root of the kagent app server. For local dev, port-forward kagent first:
+  #   kubectl port-forward -n kagent svc/kagent 8083:8083
+  baseURL: http://localhost:8083
+
+org:
+  # Short, stable org slug. Used to mint per-channel service identities
+  # (X-User-ID = opentag:org:{id}:{team}:{channel}).
+  id: acme
+
+governance:
+  # Whether @OpenTag responds in DMs (DMs run under the user's personal identity).
+  dmsEnabled: true
+  spendCap:
+    # Best-effort per-channel turn budget (0 = unlimited). Alerts at 75%/95%,
+    # over-limit turns are declined. TODO(spend): real token-cost caps.
+    turnsPerChannel: 0
+
+audit:
+  # JSONL audit trail. Empty = stderr.
+  path: ""
+
+# One teammate per channel: each binding maps a Slack channel to a kagent agent.
+bindings:
+  - channelId: C0123456789      # Slack channel id (not the #name)
+    agent:
+      namespace: kagent
+      name: k8s-agent
+    private: false              # private channels get isolated memory (M2)
+    ambient: false             # proactive behavior is opt-in (M3)
+    memory:                    # shared-memory layers (M2)
+      channel: true
+      workspace: true
+      org: false
+
+# Optional fallback for unbound channels and DMs. Omit to default-deny channels.
+defaultBinding:
+  agent:
+    namespace: kagent
+    name: k8s-agent
