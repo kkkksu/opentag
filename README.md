@@ -44,7 +44,9 @@ cloud-native agent runtime underneath.
 - **Governance controls** — default-deny routing, DM policy, per-channel turn caps
 - **JSONL audit trail** — who asked, which agent ran, the outcome
 - **Cloud-native deployment** — container image + Helm chart
-- **Extensible** — clean `chat.Provider` and `backend.AgentBackend` abstractions
+- **Extensible** — kagent fully supports the MCP protocol, which allows you to use tools from any MCP server. 
+
+
 
 ## OpenTag vs. managed Claude Tag-style products
 
