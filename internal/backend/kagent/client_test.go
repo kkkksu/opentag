@@ -104,6 +104,51 @@ func TestTaskToBackend_FallsBackToStatusMessage(t *testing.T) {
 	}
 }
 
+// assemble runs a sequence of events through replyAssembler and returns the
+// concatenated streamed reply (what the user would see).
+func assemble(events ...a2a.Event) string {
+	var asm replyAssembler
+	var out string
+	for _, e := range events {
+		out += asm.next(e)
+	}
+	return out + asm.finish()
+}
+
+func TestReplyAssembler_SkipsUserEchoAndDedupesArtifact(t *testing.T) {
+	// Mirrors the real kagent stream: user echo, agent reply, duplicate artifact.
+	userEcho := &a2a.TaskStatusUpdateEvent{
+		Status: a2a.TaskStatus{Message: a2a.NewMessage(a2a.MessageRoleUser, a2a.NewTextPart("say pong"))},
+	}
+	agentMsg := &a2a.TaskStatusUpdateEvent{
+		Status: a2a.TaskStatus{Message: a2a.NewMessage(a2a.MessageRoleAgent, a2a.NewTextPart("pong"))},
+	}
+	artifact := &a2a.TaskArtifactUpdateEvent{
+		Artifact: &a2a.Artifact{Parts: a2a.ContentParts{a2a.NewTextPart("pong")}},
+	}
+	if got := assemble(userEcho, agentMsg, artifact); got != "pong" {
+		t.Errorf("assemble = %q, want %q", got, "pong")
+	}
+}
+
+func TestReplyAssembler_StreamsAgentDeltas(t *testing.T) {
+	d1 := &a2a.Message{Role: a2a.MessageRoleAgent, Parts: a2a.ContentParts{a2a.NewTextPart("po")}}
+	d2 := &a2a.Message{Role: a2a.MessageRoleAgent, Parts: a2a.ContentParts{a2a.NewTextPart("ng")}}
+	if got := assemble(d1, d2); got != "pong" {
+		t.Errorf("assemble = %q, want %q", got, "pong")
+	}
+}
+
+func TestReplyAssembler_ArtifactFallbackWhenNoStream(t *testing.T) {
+	// If the agent only emits an artifact (no streamed message), use it.
+	artifact := &a2a.TaskArtifactUpdateEvent{
+		Artifact: &a2a.Artifact{Parts: a2a.ContentParts{a2a.NewTextPart("result only")}},
+	}
+	if got := assemble(artifact); got != "result only" {
+		t.Errorf("assemble = %q, want %q", got, "result only")
+	}
+}
+
 func TestAgentRefString(t *testing.T) {
 	if got := agentRefString(config.AgentRef{Namespace: "ns", Name: "a"}); got != "ns/a" {
 		t.Errorf("agentRefString = %q", got)

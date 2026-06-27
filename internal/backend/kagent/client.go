@@ -178,6 +178,7 @@ func (c *Client) Stream(ctx context.Context, in backend.StreamInput, onChunk fun
 	}
 
 	result := backend.StreamResult{SessionID: in.SessionID}
+	var asm replyAssembler
 	for event, evErr := range cl.SendStreamingMessage(ctx, &a2a.SendMessageRequest{Message: msg}) {
 		if evErr != nil {
 			return result, fmt.Errorf("stream from agent %s: %w", agentRefString(in.Agent), evErr)
@@ -189,15 +190,64 @@ func (c *Client) Stream(ctx context.Context, in backend.StreamInput, onChunk fun
 			result.TaskID = tid
 			result.Done = done
 		}
-		if chunk := textOf(event); chunk != "" {
+		if chunk := asm.next(event); chunk != "" {
 			onChunk(chunk)
 		}
+	}
+	if chunk := asm.finish(); chunk != "" {
+		onChunk(chunk)
 	}
 	// A bare Message response (no Task) means the turn completed inline.
 	if result.TaskID == "" {
 		result.Done = true
 	}
 	return result, nil
+}
+
+// replyAssembler turns a stream of A2A events into the agent's reply text.
+//
+// kagent echoes the user message back as a ROLE_USER event, and emits the final
+// answer as both a streamed status message and an artifact. So we stream only
+// agent-role text and hold artifacts as a fallback, emitted at the end only if
+// the agent streamed no message text — avoiding both the echo and duplication.
+type replyAssembler struct {
+	streamedAgentText bool
+	lastArtifact      string
+}
+
+// next returns the text to emit for one event (empty if nothing to emit now).
+func (r *replyAssembler) next(event a2a.Event) string {
+	switch e := event.(type) {
+	case *a2a.Message:
+		if e.Role != a2a.MessageRoleUser {
+			if t := partsText(e.Parts); t != "" {
+				r.streamedAgentText = true
+				return t
+			}
+		}
+	case *a2a.TaskStatusUpdateEvent:
+		if e.Status.Message != nil && e.Status.Message.Role != a2a.MessageRoleUser {
+			if t := partsText(e.Status.Message.Parts); t != "" {
+				r.streamedAgentText = true
+				return t
+			}
+		}
+	case *a2a.TaskArtifactUpdateEvent:
+		if e.Artifact != nil {
+			if t := partsText(e.Artifact.Parts); t != "" {
+				r.lastArtifact = t
+			}
+		}
+	}
+	return ""
+}
+
+// finish returns the artifact fallback when the agent streamed no message text.
+func (r *replyAssembler) finish() string {
+	if !r.streamedAgentText {
+		return r.lastArtifact
+	}
+	return ""
 }
 
 // GetTask fetches the current state and any result text of a task via the A2A
@@ -273,23 +323,6 @@ func taskStateOf(event a2a.Event) (taskID string, done bool) {
 		return string(e.TaskID), false
 	}
 	return "", false
-}
-
-// textOf concatenates the text parts of an event into a single string.
-func textOf(event a2a.Event) string {
-	switch e := event.(type) {
-	case *a2a.Message:
-		return partsText(e.Parts)
-	case *a2a.TaskStatusUpdateEvent:
-		if e.Status.Message != nil {
-			return partsText(e.Status.Message.Parts)
-		}
-	case *a2a.TaskArtifactUpdateEvent:
-		if e.Artifact != nil {
-			return partsText(e.Artifact.Parts)
-		}
-	}
-	return ""
 }
 
 func partsText(parts a2a.ContentParts) string {
