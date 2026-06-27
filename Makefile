@@ -1,7 +1,7 @@
 BINARY := opentag
 PKG := ./...
 
-.PHONY: build run test vet lint tidy clean docker
+.PHONY: build run test vet lint tidy clean docker helm-lint
 
 build:
 	go build -o bin/$(BINARY) ./cmd/opentag
@@ -26,3 +26,6 @@ clean:
 
 docker:
 	docker build -t opentag:dev -f deploy/Dockerfile .
+
+helm-lint:
+	helm lint deploy/helm/opentag --set slack.appToken=xapp-x --set slack.botToken=xoxb-x

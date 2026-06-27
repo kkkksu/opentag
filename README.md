@@ -119,6 +119,22 @@ In Slack: `@OpenTag summarize the open incidents` — OpenTag opens a thread, ru
 the bound kagent agent, and streams the reply. Anyone in the channel can reply
 in that thread to continue the same session.
 
+## Deploy to Kubernetes
+
+A Helm chart lives in `deploy/helm/opentag`. It renders your config into a
+ConfigMap and injects the Slack tokens from a Secret:
+
+```sh
+helm install opentag deploy/helm/opentag \
+  --set slack.appToken=$SLACK_APP_TOKEN \
+  --set slack.botToken=$SLACK_BOT_TOKEN \
+  --set config.kagent.baseURL=http://kagent.kagent.svc.cluster.local:8083 \
+  --set config.org.id=acme
+```
+
+Set `existingSecret` to use a Secret you manage (keys `appToken`, `botToken`),
+and put bindings/routines under `config.*` (see `values.yaml`).
+
 ## Development
 
 ```sh
@@ -126,6 +142,8 @@ make test
 make vet
 make build
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow.
 
 ## License
 
