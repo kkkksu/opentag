@@ -2,6 +2,8 @@
 
 **Open-source, cloud-native infrastructure for Claude Tag-style shared AI teammates in Slack — extensible, self-hostable, and designed to work with any agent backend.**
 
+![OpenTag architecture banner](assets/opentag-banner.png)
+
 [![CI](https://github.com/kkkksu/opentag/actions/workflows/ci.yml/badge.svg)](https://github.com/kkkksu/opentag/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/kkkksu/opentag.svg)](https://pkg.go.dev/github.com/kkkksu/opentag)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
@@ -62,13 +64,6 @@ cloud-native agent runtime underneath.
 
 *Comparison reflects OpenTag's current and near-term scope; see the
 [roadmap](ROADMAP.md) for what's shipped vs. planned.*
-
-## Demo
-
-<!-- demo gif: capture during the first live run against a real Slack workspace -->
-_A short walkthrough GIF is coming once OpenTag has been run against a live
-workspace. Until then, the flow is: `@OpenTag <request>` → it opens a thread,
-runs the bound agent, and streams the reply; anyone can continue the thread._
 
 ## Design in one picture
 
