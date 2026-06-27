@@ -36,11 +36,17 @@ func short(parts ...string) string {
 }
 
 // ForChannelThread resolves identity for a channel mention working in a thread.
-// The service identity is shared across the whole channel (one teammate per
-// channel); the session is unique per thread.
-func ForChannelThread(orgID, team, channel, threadTS string) Identity {
+// The session is always unique per thread (its own conversation). The UserID —
+// which keys kagent's memory — is shared across the whole channel when
+// sharedMemory is true (so the agent's memory spans threads), or isolated per
+// thread when false.
+func ForChannelThread(orgID, team, channel, threadTS string, sharedMemory bool) Identity {
+	userID := fmt.Sprintf("opentag:org:%s:%s:%s", orgID, team, channel)
+	if !sharedMemory {
+		userID += ":t-" + short(threadTS)
+	}
 	return Identity{
-		UserID:    fmt.Sprintf("opentag:org:%s:%s:%s", orgID, team, channel),
+		UserID:    userID,
 		SessionID: "thread-" + short(team, channel, threadTS),
 	}
 }

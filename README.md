@@ -36,6 +36,23 @@ A channel mention runs under a shared service identity, so anyone in the channel
 can pick up a thread someone else started, while each thread stays its own
 coherent session.
 
+## Memory
+
+OpenTag gets **channel-scoped memory for free** from this identity model. kagent
+keys an agent's memory by `(agent, user_id)`, and every mention in a channel runs
+under the *same* `user_id` (the channel service identity) against the *same*
+agent — so facts the agent learns in one thread are available in others, and
+persist across restarts (kagent stores them).
+
+Two things to know:
+
+- **The bound agent must have memory enabled** — i.e. configured with kagent's
+  memory tools and an embedding config. kagent generates the embeddings and does
+  recall/save itself; OpenTag does not run an embedder.
+- **`sharedMemory` (per binding, default `true`)** controls the lever OpenTag
+  owns: `true` shares one identity across the whole channel (cross-thread
+  memory); `false` isolates each thread.
+
 ## Requirements
 
 - Go 1.26+

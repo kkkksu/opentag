@@ -48,6 +48,7 @@ func (a *App) Handle(ctx context.Context, ev chat.Event, out chat.Streamer) {
 		Surface: ev.Surface.String(), Team: ev.Team, Channel: ev.Channel,
 		ThreadTS: ev.ThreadTS, User: ev.User, Identity: plan.id.UserID,
 		Agent: plan.agent.String(), SessionID: plan.id.SessionID,
+		MemoryShared: plan.shared,
 	}
 	a.write(base, "request", "ok")
 
@@ -85,8 +86,9 @@ func (a *App) Handle(ctx context.Context, ev chat.Event, out chat.Streamer) {
 
 // turnPlan is the resolved agent + identity for an event.
 type turnPlan struct {
-	agent config.AgentRef
-	id    identity.Identity
+	agent  config.AgentRef
+	id     identity.Identity
+	shared bool // whether memory is shared across the channel
 }
 
 // resolve applies routing + governance and computes identity. On denial it
@@ -113,8 +115,9 @@ func (a *App) resolve(ev chat.Event, out chat.Streamer) (turnPlan, bool) {
 			out.Append(alert + "\n\n")
 		}
 		return turnPlan{
-			agent: binding.Agent,
-			id:    identity.ForChannelThread(a.cfg.Org.ID, ev.Team, ev.Channel, ev.ThreadTS),
+			agent:  binding.Agent,
+			id:     identity.ForChannelThread(a.cfg.Org.ID, ev.Team, ev.Channel, ev.ThreadTS, binding.MemoryShared()),
+			shared: binding.MemoryShared(),
 		}, true
 
 	case chat.SurfaceDM:

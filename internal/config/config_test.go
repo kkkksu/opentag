@@ -44,6 +44,9 @@ func TestLoad_ValidAndEnvExpansion(t *testing.T) {
 	if !cfg.Governance.DMsAllowed() {
 		t.Errorf("DMsAllowed default should be true")
 	}
+	if !cfg.Bindings[0].MemoryShared() {
+		t.Errorf("MemoryShared should default to true")
+	}
 }
 
 func TestLoad_ValidationErrors(t *testing.T) {

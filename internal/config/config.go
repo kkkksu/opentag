@@ -78,14 +78,6 @@ func (a AgentRef) String() string { return a.Namespace + "/" + a.Name }
 // IsZero reports whether the ref is unset.
 func (a AgentRef) IsZero() bool { return a.Namespace == "" && a.Name == "" }
 
-// MemoryScope selects which shared-memory layers a channel reads/writes.
-// Not yet wired.
-type MemoryScope struct {
-	Channel   bool `yaml:"channel"`
-	Workspace bool `yaml:"workspace"`
-	Org       bool `yaml:"org"`
-}
-
 // ChannelBinding maps a Slack channel to the kagent agent that answers it, plus
 // the per-channel policy. One binding == one teammate per channel.
 type ChannelBinding struct {
@@ -95,8 +87,18 @@ type ChannelBinding struct {
 	Private bool `yaml:"private"`
 	// Ambient opts the channel into proactive behavior (planned). Off by default.
 	Ambient bool `yaml:"ambient"`
-	// Memory selects shared-memory layers (planned). Defaults to channel+workspace.
-	Memory MemoryScope `yaml:"memory"`
+	// SharedMemory controls whether the whole channel shares one identity, and
+	// therefore one memory, across threads. When true (default), kagent's
+	// per-(agent,user) memory becomes channel-scoped: facts the agent learns in
+	// one thread are recalled in others. When false, each thread is isolated.
+	// (Actual recall/save is performed by the kagent agent's memory tools; this
+	// only controls the identity the turn runs as.)
+	SharedMemory *bool `yaml:"sharedMemory"`
+}
+
+// MemoryShared reports the effective shared-memory policy (default true).
+func (b ChannelBinding) MemoryShared() bool {
+	return b.SharedMemory == nil || *b.SharedMemory
 }
 
 // AuditConfig configures the audit sink.

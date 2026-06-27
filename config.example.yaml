@@ -35,12 +35,12 @@ bindings:
     agent:
       namespace: kagent
       name: k8s-agent
-    private: false              # private channels get isolated memory (M2)
-    ambient: false             # proactive behavior is opt-in (M3)
-    memory:                    # shared-memory layers (M2)
-      channel: true
-      workspace: true
-      org: false
+    private: false             # private channels get isolated memory (planned)
+    ambient: false             # proactive behavior is opt-in (planned)
+    sharedMemory: true         # one identity for the whole channel, so the
+                               # agent's memory spans threads. Set false to
+                               # isolate memory per thread. Requires the bound
+                               # agent to have memory tools + an embedding config.
 
 # Optional fallback for unbound channels and DMs. Omit to default-deny channels.
 defaultBinding:

@@ -13,18 +13,19 @@ import (
 
 // Entry is one audit record.
 type Entry struct {
-	Time      time.Time `json:"time"`
-	Surface   string    `json:"surface"`
-	Team      string    `json:"team"`
-	Channel   string    `json:"channel"`
-	ThreadTS  string    `json:"thread_ts,omitempty"`
-	User      string    `json:"user"`
-	Identity  string    `json:"identity"` // X-User-ID the work ran as
-	Agent     string    `json:"agent,omitempty"`
-	SessionID string    `json:"session_id,omitempty"`
-	TaskID    string    `json:"task_id,omitempty"`
-	Event     string    `json:"event"`   // e.g. "request", "completed", "denied"
-	Outcome   string    `json:"outcome"` // e.g. "ok", "error", reason
+	Time         time.Time `json:"time"`
+	Surface      string    `json:"surface"`
+	Team         string    `json:"team"`
+	Channel      string    `json:"channel"`
+	ThreadTS     string    `json:"thread_ts,omitempty"`
+	User         string    `json:"user"`
+	Identity     string    `json:"identity"` // X-User-ID the work ran as
+	Agent        string    `json:"agent,omitempty"`
+	SessionID    string    `json:"session_id,omitempty"`
+	TaskID       string    `json:"task_id,omitempty"`
+	MemoryShared bool      `json:"memory_shared,omitempty"`
+	Event        string    `json:"event"`   // e.g. "request", "completed", "denied"
+	Outcome      string    `json:"outcome"` // e.g. "ok", "error", reason
 }
 
 // Sink records audit entries. Implementations must be safe for concurrent use.
