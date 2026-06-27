@@ -1,8 +1,7 @@
-# OpenTag
+![OpenTag architecture banner](assets/opentag-banner.png)
 
 **Open-source, cloud-native infrastructure for Claude Tag-style shared AI teammates in Slack — extensible, self-hostable, and designed to work with any agent backend.**
 
-![OpenTag architecture banner](assets/opentag-banner.png)
 
 [![CI](https://github.com/kkkksu/opentag/actions/workflows/ci.yml/badge.svg)](https://github.com/kkkksu/opentag/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/kkkksu/opentag.svg)](https://pkg.go.dev/github.com/kkkksu/opentag)
@@ -10,10 +9,14 @@
 
 Inspired by the Claude Tag pattern: instead of a private chatbot per person, a
 Slack **channel** gets **one shared teammate** that everyone can tag, watch,
-redirect, and hand work to. OpenTag owns the **Slack collaboration layer** —
+redirect, and hand work to. 
+
+OpenTag owns the **Slack collaboration layer** 
 mapping Slack teams, channels, threads, and users into agent routing decisions,
 thread sessions, shared-vs-personal identities, workspace policy, and
-Slack-native audit records — and **delegates cloud-native agent execution to
+Slack-native audit records.
+
+OpenTag **delegates cloud-native agent execution to
 [kagent](https://github.com/kagent-dev/kagent)**, which already runs **any model**
 (OpenAI, Anthropic, Gemini, Bedrock, Ollama, …), **any agent framework** (ADK,
 CrewAI, LangGraph, or bring-your-own), A2A, memory, tools, and observability. A
