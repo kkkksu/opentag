@@ -8,12 +8,15 @@
 
 Inspired by the Claude Tag pattern: instead of a private chatbot per person, a
 Slack **channel** gets **one shared teammate** that everyone can tag, watch,
-redirect, and hand work to. OpenTag owns the collaboration layer — **identity,
-thread sessions, governance, audit, and routing** — and **delegates execution to
+redirect, and hand work to. OpenTag owns the **Slack collaboration layer** —
+mapping Slack teams, channels, threads, and users into agent routing decisions,
+thread sessions, shared-vs-personal identities, workspace policy, and
+Slack-native audit records — and **delegates cloud-native agent execution to
 [kagent](https://github.com/kagent-dev/kagent)**, which already runs **any model**
-(OpenAI, Anthropic, Gemini, Bedrock, Ollama, …) and **any agent framework** (ADK,
-CrewAI, LangGraph, or bring-your-own). A small, backend-agnostic interface keeps
-the door open to other agent *platforms* beyond kagent later.
+(OpenAI, Anthropic, Gemini, Bedrock, Ollama, …), **any agent framework** (ADK,
+CrewAI, LangGraph, or bring-your-own), A2A, memory, tools, and observability. A
+small, backend-agnostic interface keeps the door open to other agent *platforms*
+beyond kagent later.
 
 Status: alpha (intentionally — see the [roadmap](ROADMAP.md)). Channel mentions,
 DMs, channel-scoped memory, background tasks, and proactive routines work today.
@@ -22,9 +25,11 @@ DMs, channel-scoped memory, background tasks, and proactive routines work today.
 
 Claude Tag popularized the "shared AI teammate in a Slack channel" model. OpenTag
 brings that interaction model to **open, cloud-native, self-hostable
-infrastructure** with **pluggable agent backends** and full control over
-**identity, governance, and audit** — run it in your own cluster, point it at
-your own agents, and keep your data and audit trail in-house.
+infrastructure** with **pluggable agent backends**. It keeps the Slack-side
+collaboration contract explicit — which channel may use which agent, which
+Slack thread maps to which agent session, whether a channel uses shared memory,
+and what Slack-native audit record is written — while kagent handles the
+cloud-native agent runtime underneath.
 
 ## Features
 
@@ -70,10 +75,11 @@ Slack (Socket Mode)
    │  @OpenTag mention (in a thread) / DM
    ▼
 ChatProvider ──► core ──► AgentBackend (kagent)
-                 ├─ routing     EnsureSession + A2A Stream
-                 ├─ identity     (X-User-ID + sessionID/contextID)
-                 ├─ governance
-                 └─ audit
+                 ├─ Slack routing     channel → kagent agent
+                 ├─ Slack identity    channel service ID / DM user ID
+                 ├─ thread sessions   Slack thread → kagent contextID
+                 ├─ Slack governance  default-deny, DM policy, turn caps
+                 └─ Slack audit       user/channel/thread → outcome
 ```
 
 **Identity is per *channel*, work is per *thread*:**
