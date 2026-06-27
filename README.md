@@ -10,8 +10,10 @@ Inspired by the Claude Tag pattern: instead of a private chatbot per person, a
 Slack **channel** gets **one shared teammate** that everyone can tag, watch,
 redirect, and hand work to. OpenTag owns the collaboration layer — **identity,
 thread sessions, governance, audit, and routing** — and **delegates execution to
-[kagent](https://github.com/kagent-dev/kagent) today, and other agent backends
-later** through a small, backend-agnostic interface.
+[kagent](https://github.com/kagent-dev/kagent)**, which already runs **any model**
+(OpenAI, Anthropic, Gemini, Bedrock, Ollama, …) and **any agent framework** (ADK,
+CrewAI, LangGraph, or bring-your-own). A small, backend-agnostic interface keeps
+the door open to other agent *platforms* beyond kagent later.
 
 Status: alpha (intentionally — see the [roadmap](ROADMAP.md)). Channel mentions,
 DMs, channel-scoped memory, background tasks, and proactive routines work today.
@@ -33,7 +35,7 @@ your own agents, and keep your data and audit trail in-house.
 - **Channel-scoped memory** — the teammate remembers a channel over time
 - **Background tasks** — delegate long work; results post back to the thread
 - **Proactive routines** — scheduled prompts that post results unprompted
-- **Backend-agnostic agent interface** — kagent today, more backends later
+- **Any model & agent framework** — via kagent (OpenAI, Anthropic, Gemini, Bedrock, Ollama; ADK, CrewAI, LangGraph, BYO) today; pluggable for other agent platforms later
 - **Governance controls** — default-deny routing, DM policy, per-channel turn caps
 - **JSONL audit trail** — who asked, which agent ran, the outcome
 - **Cloud-native deployment** — container image + Helm chart
@@ -46,7 +48,7 @@ your own agents, and keep your data and audit trail in-house.
 | Shared Slack teammate | ✓ | ✓ |
 | Open source | ✓ | ✗ |
 | Self-hostable | ✓ | ✗ |
-| Bring-your-own AI backend | ✓ | limited |
+| Any model / agent framework | ✓ (via kagent) | limited |
 | Cloud-native self-hosting | ✓ | managed only |
 | Extensible runtime | ✓ | limited |
 | Governance + audit | ✓ | ✓ |
