@@ -44,9 +44,10 @@ type StreamResult struct {
 
 // Task is the state of an async kagent task.
 type Task struct {
-	ID    string
-	State string
-	Text  string
+	ID       string
+	State    string
+	Text     string
+	Terminal bool
 }
 
 // AgentBackend is the runtime OpenTag delegates work to.
@@ -55,6 +56,8 @@ type AgentBackend interface {
 	EnsureSession(ctx context.Context, in EnsureSessionInput) error
 	// Stream sends one turn and invokes onChunk for each streamed text fragment.
 	Stream(ctx context.Context, in StreamInput, onChunk func(string)) (StreamResult, error)
-	// GetTask fetches async task state.
-	GetTask(ctx context.Context, userID, taskID string) (Task, error)
+	// GetTask fetches the current state (and any result text) of a task.
+	GetTask(ctx context.Context, userID string, agent config.AgentRef, taskID string) (Task, error)
+	// CancelTask requests cancellation of a running task.
+	CancelTask(ctx context.Context, userID string, agent config.AgentRef, taskID string) error
 }

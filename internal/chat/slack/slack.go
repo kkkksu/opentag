@@ -46,8 +46,12 @@ func New(appToken, botToken string, handler chat.Handler, log *slog.Logger) *Pro
 	}
 }
 
-// Run connects and dispatches events until ctx is cancelled.
-func (p *Provider) Run(ctx context.Context) error {
+// Connect resolves the bot user and team id via AuthTest. It is idempotent and
+// safe to call before Run (so callers can read TeamID up front).
+func (p *Provider) Connect(ctx context.Context) error {
+	if p.botUserID != "" {
+		return nil
+	}
 	auth, err := p.api.AuthTestContext(ctx)
 	if err != nil {
 		return fmt.Errorf("slack auth test: %w", err)
@@ -55,9 +59,29 @@ func (p *Provider) Run(ctx context.Context) error {
 	p.botUserID = auth.UserID
 	p.teamID = auth.TeamID
 	p.log.Info("slack connected", "bot_user", p.botUserID, "team", p.teamID)
+	return nil
+}
 
+// TeamID returns the connected workspace id (empty until Connect succeeds).
+func (p *Provider) TeamID() string { return p.teamID }
+
+// Run connects (if needed) and dispatches events until ctx is cancelled.
+func (p *Provider) Run(ctx context.Context) error {
+	if err := p.Connect(ctx); err != nil {
+		return err
+	}
 	go p.loop(ctx)
 	return p.sm.RunContext(ctx)
+}
+
+// Post implements chat.Poster, sending a message outside the event flow.
+func (p *Provider) Post(ctx context.Context, target chat.Target, text string) error {
+	opts := []slack.MsgOption{slack.MsgOptionText(text, false)}
+	if target.ThreadTS != "" {
+		opts = append(opts, slack.MsgOptionTS(target.ThreadTS))
+	}
+	_, _, err := p.api.PostMessageContext(ctx, target.Channel, opts...)
+	return err
 }
 
 func (p *Provider) loop(ctx context.Context) {

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -24,8 +25,20 @@ type Config struct {
 	// Default applies to channels with no explicit binding. When nil and a
 	// channel is unbound, governance default-deny refuses the request.
 	Default *ChannelBinding `yaml:"defaultBinding"`
+	// Routines are standing, proactive jobs run on a fixed interval.
+	Routines []Routine `yaml:"routines"`
 	// Audit configures where the audit trail is written.
 	Audit AuditConfig `yaml:"audit"`
+}
+
+// Routine is a scheduled proactive job: every interval, run Prompt against the
+// channel's agent and post the result.
+type Routine struct {
+	Name      string `yaml:"name"`
+	ChannelID string `yaml:"channelId"`
+	// Every is a Go duration string, e.g. "1h", "30m". (Cron is future work.)
+	Every  string `yaml:"every"`
+	Prompt string `yaml:"prompt"`
 }
 
 // SlackConfig holds the two tokens required for Socket Mode operation.
@@ -157,6 +170,20 @@ func (c *Config) validate() error {
 	}
 	if c.Default != nil && c.Default.Agent.IsZero() {
 		return fmt.Errorf("defaultBinding.agent must set namespace and name")
+	}
+	for i, r := range c.Routines {
+		if r.Name == "" {
+			return fmt.Errorf("routines[%d].name is required", i)
+		}
+		if r.ChannelID == "" {
+			return fmt.Errorf("routines[%d].channelId is required", i)
+		}
+		if r.Prompt == "" {
+			return fmt.Errorf("routines[%d].prompt is required", i)
+		}
+		if _, err := time.ParseDuration(r.Every); err != nil {
+			return fmt.Errorf("routines[%d].every is invalid (use e.g. 1h, 30m): %w", i, err)
+		}
 	}
 	return nil
 }

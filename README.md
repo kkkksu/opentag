@@ -7,8 +7,8 @@ teammate** that everyone can tag, watch, redirect, and hand work to. OpenTag
 handles the chat-collaboration layer — identity, sessions, governance, audit —
 and delegates the actual agent execution to a kagent cluster.
 
-Status: alpha. Channel mentions and DMs work today; shared memory, async tasks,
-and proactive routines are on the roadmap.
+Status: alpha. Channel mentions, DMs, channel-scoped memory, background tasks,
+and proactive routines work today.
 
 ## Design in one picture
 
@@ -30,6 +30,8 @@ ChatProvider ──► core ──► AgentBackend (kagent)
 | One teammate per channel | a `ChannelBinding` → one kagent agent + one **org service identity** |
 | Work happens in a thread | one kagent **session** per Slack thread (`contextID = hash(team,channel,threadTS)`) |
 | Channel mention vs DM | channel → org service identity; DM → the user's personal identity |
+| Delegate & walk away | long tasks are tracked in the background and posted back to the thread when done |
+| Proactive teammate | scheduled routines run a prompt and post results without being asked |
 | Spend caps + audit | best-effort per-channel turn meter + JSONL audit trail |
 
 A channel mention runs under a shared service identity, so anyone in the channel
@@ -52,6 +54,16 @@ Two things to know:
 - **`sharedMemory` (per binding, default `true`)** controls the lever OpenTag
   owns: `true` shares one identity across the whole channel (cross-thread
   memory); `false` isolates each thread.
+
+## Background work & proactive routines
+
+- **Delegate and walk away.** If a request doesn't finish inline, OpenTag tracks
+  the task and posts the result back into the thread when it completes.
+- **Routines** run a prompt on an interval and post the result to a channel
+  without anyone asking (see `routines` in the config).
+- **Manage standing work from Slack:**
+  - `@OpenTag triggers` (or `status`) — list the channel's running tasks and routines.
+  - `@OpenTag stop <id>` — cancel a task or routine by id.
 
 ## Requirements
 

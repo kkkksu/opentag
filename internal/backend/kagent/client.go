@@ -200,37 +200,51 @@ func (c *Client) Stream(ctx context.Context, in backend.StreamInput, onChunk fun
 	return result, nil
 }
 
-// GetTask fetches async task state. Best-effort decode of the kagent task
-// envelope; refined when the async tracker lands.
-func (c *Client) GetTask(ctx context.Context, userID, taskID string) (backend.Task, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/api/tasks/"+taskID, nil)
+// GetTask fetches the current state and any result text of a task via the A2A
+// protocol (typed, robust). agent selects the A2A client; userID stamps identity.
+func (c *Client) GetTask(ctx context.Context, userID string, agent config.AgentRef, taskID string) (backend.Task, error) {
+	cl, err := c.a2aClientFor(ctx, agent, userID)
 	if err != nil {
-		return backend.Task{}, fmt.Errorf("build task request: %w", err)
+		return backend.Task{}, err
 	}
-	req.Header.Set(userIDHeader, userID)
-
-	resp, err := c.rest.Do(req)
+	task, err := cl.GetTask(ctx, &a2a.GetTaskRequest{ID: a2a.TaskID(taskID)})
 	if err != nil {
 		return backend.Task{}, fmt.Errorf("get task %s: %w", taskID, err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
-		return backend.Task{}, fmt.Errorf("get task %s: kagent returned %s: %s", taskID, resp.Status, strings.TrimSpace(string(msg)))
-	}
+	return taskToBackend(task), nil
+}
 
-	var env struct {
-		Data struct {
-			ID     string `json:"id"`
-			Status struct {
-				State string `json:"state"`
-			} `json:"status"`
-		} `json:"data"`
+// CancelTask requests cancellation of a running task via A2A.
+func (c *Client) CancelTask(ctx context.Context, userID string, agent config.AgentRef, taskID string) error {
+	cl, err := c.a2aClientFor(ctx, agent, userID)
+	if err != nil {
+		return err
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&env); err != nil {
-		return backend.Task{}, fmt.Errorf("decode task %s: %w", taskID, err)
+	if _, err := cl.CancelTask(ctx, &a2a.CancelTaskRequest{ID: a2a.TaskID(taskID)}); err != nil {
+		return fmt.Errorf("cancel task %s: %w", taskID, err)
 	}
-	return backend.Task{ID: env.Data.ID, State: env.Data.Status.State}, nil
+	return nil
+}
+
+// taskToBackend maps an A2A task to the backend representation, pulling result
+// text from artifacts (preferred) or the status message.
+func taskToBackend(task *a2a.Task) backend.Task {
+	out := backend.Task{
+		ID:       string(task.ID),
+		State:    task.Status.State.String(),
+		Terminal: task.Status.State.Terminal(),
+	}
+	var b strings.Builder
+	for _, art := range task.Artifacts {
+		if art != nil {
+			b.WriteString(partsText(art.Parts))
+		}
+	}
+	if b.Len() == 0 && task.Status.Message != nil {
+		b.WriteString(partsText(task.Status.Message.Parts))
+	}
+	out.Text = b.String()
+	return out
 }
 
 // contextIDOf extracts the conversation context id carried by an event, if any.

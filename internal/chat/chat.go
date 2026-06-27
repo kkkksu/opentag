@@ -47,6 +47,19 @@ type Streamer interface {
 // inbound event, typically in its own goroutine.
 type Handler func(ctx context.Context, ev Event, out Streamer)
 
+// Target identifies where an out-of-band message should be posted. A zero
+// ThreadTS posts at the top of the channel rather than in a thread.
+type Target struct {
+	Channel  string
+	ThreadTS string
+}
+
+// Poster sends a message outside the request/response flow — used for async
+// task results and proactive routine posts.
+type Poster interface {
+	Post(ctx context.Context, target Target, text string) error
+}
+
 // Provider is a chat-platform integration (e.g. Slack Socket Mode).
 type Provider interface {
 	// Run blocks, dispatching events to the configured Handler until ctx ends.

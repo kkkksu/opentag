@@ -47,3 +47,12 @@ defaultBinding:
   agent:
     namespace: kagent
     name: k8s-agent
+
+# Standing, proactive jobs. Every interval, the prompt runs against the
+# channel's bound agent and the result is posted to the channel. List/cancel
+# from Slack with `@OpenTag triggers` and `@OpenTag stop <name>`.
+routines:
+  - name: daily-incident-digest
+    channelId: C0123456789
+    every: 24h            # Go duration (e.g. 30m, 6h, 24h). Cron is future work.
+    prompt: Summarize open incidents and any stale PRs from the last day.

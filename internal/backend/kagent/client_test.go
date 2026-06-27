@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/a2aproject/a2a-go/v2/a2a"
+
 	"github.com/kkkksu/opentag/internal/backend"
 	"github.com/kkkksu/opentag/internal/config"
 )
@@ -74,21 +76,31 @@ func TestEnsureSession_ServerError(t *testing.T) {
 	}
 }
 
-func TestGetTask_ParsesEnvelope(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if got := r.Header.Get("X-User-ID"); got != "u1" {
-			t.Errorf("X-User-ID = %q", got)
-		}
-		_, _ = w.Write([]byte(`{"error":false,"data":{"id":"task-1","status":{"state":"TASK_STATE_COMPLETED"}}}`))
-	}))
-	defer srv.Close()
-
-	task, err := New(srv.URL).GetTask(context.Background(), "u1", "task-1")
-	if err != nil {
-		t.Fatalf("GetTask() = %v", err)
+func TestTaskToBackend(t *testing.T) {
+	task := &a2a.Task{
+		ID:     "task-1",
+		Status: a2a.TaskStatus{State: a2a.TaskStateCompleted},
+		Artifacts: []*a2a.Artifact{
+			{Parts: a2a.ContentParts{a2a.NewTextPart("the "), a2a.NewTextPart("result")}},
+		},
 	}
-	if task.ID != "task-1" || task.State != "TASK_STATE_COMPLETED" {
-		t.Errorf("task = %+v", task)
+	got := taskToBackend(task)
+	if got.ID != "task-1" || !got.Terminal || got.Text != "the result" {
+		t.Errorf("taskToBackend = %+v", got)
+	}
+}
+
+func TestTaskToBackend_FallsBackToStatusMessage(t *testing.T) {
+	task := &a2a.Task{
+		ID: "t2",
+		Status: a2a.TaskStatus{
+			State:   a2a.TaskStateWorking,
+			Message: a2a.NewMessage(a2a.MessageRoleAgent, a2a.NewTextPart("still going")),
+		},
+	}
+	got := taskToBackend(task)
+	if got.Terminal || got.Text != "still going" {
+		t.Errorf("taskToBackend = %+v", got)
 	}
 }
 
