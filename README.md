@@ -1,14 +1,65 @@
 # OpenTag
 
-**A shared `@OpenTag` AI teammate for Slack, backed by [kagent](https://github.com/kagent-dev/kagent).**
+**Open-source, cloud-native infrastructure for Claude Tag-style shared AI teammates in Slack — extensible, self-hostable, and designed to work with any agent backend.**
 
-Instead of a private chatbot per person, a Slack **channel** gets **one shared
-teammate** that everyone can tag, watch, redirect, and hand work to. OpenTag
-handles the chat-collaboration layer — identity, sessions, governance, audit —
-and delegates the actual agent execution to a kagent cluster.
+[![CI](https://github.com/kkkksu/opentag/actions/workflows/ci.yml/badge.svg)](https://github.com/kkkksu/opentag/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/kkkksu/opentag.svg)](https://pkg.go.dev/github.com/kkkksu/opentag)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Status: alpha. Channel mentions, DMs, channel-scoped memory, background tasks,
-and proactive routines work today.
+Inspired by the Claude Tag pattern: instead of a private chatbot per person, a
+Slack **channel** gets **one shared teammate** that everyone can tag, watch,
+redirect, and hand work to. OpenTag owns the collaboration layer — **identity,
+thread sessions, governance, audit, and routing** — and **delegates execution to
+[kagent](https://github.com/kagent-dev/kagent) today, and other agent backends
+later** through a small, backend-agnostic interface.
+
+Status: alpha (intentionally — see the [roadmap](ROADMAP.md)). Channel mentions,
+DMs, channel-scoped memory, background tasks, and proactive routines work today.
+
+## Why OpenTag?
+
+Claude Tag popularized the "shared AI teammate in a Slack channel" model. OpenTag
+brings that interaction model to **open, cloud-native, self-hostable
+infrastructure** with **pluggable agent backends** and full control over
+**identity, governance, and audit** — run it in your own cluster, point it at
+your own agents, and keep your data and audit trail in-house.
+
+## Features
+
+- **Shared Slack teammate** — one `@OpenTag` per channel, not one bot per person
+- **Thread-scoped sessions** — each thread is its own coherent conversation
+- **Channel-scoped service identity** — anyone can pick up a teammate's thread
+- **Personal identity for DMs** — direct messages run as the individual user
+- **Channel-scoped memory** — the teammate remembers a channel over time
+- **Background tasks** — delegate long work; results post back to the thread
+- **Proactive routines** — scheduled prompts that post results unprompted
+- **Backend-agnostic agent interface** — kagent today, more backends later
+- **Governance controls** — default-deny routing, DM policy, per-channel turn caps
+- **JSONL audit trail** — who asked, which agent ran, the outcome
+- **Cloud-native deployment** — container image + Helm chart
+- **Extensible** — clean `chat.Provider` and `backend.AgentBackend` abstractions
+
+## OpenTag vs. managed Claude Tag-style products
+
+| | OpenTag | Managed Claude Tag-style |
+| --- | :---: | :---: |
+| Shared Slack teammate | ✓ | ✓ |
+| Open source | ✓ | ✗ |
+| Self-hostable | ✓ | ✗ |
+| Bring-your-own AI backend | ✓ | limited |
+| Cloud-native self-hosting | ✓ | managed only |
+| Extensible runtime | ✓ | limited |
+| Governance + audit | ✓ | ✓ |
+
+*Comparison reflects OpenTag's current and near-term scope; see the
+[roadmap](ROADMAP.md) for what's shipped vs. planned.*
+
+## Demo
+
+<!-- demo gif: capture during the first live run against a real Slack workspace -->
+_A short walkthrough GIF is coming once OpenTag has been run against a live
+workspace. Until then, the flow is: `@OpenTag <request>` → it opens a thread,
+runs the bound agent, and streams the reply; anyone can continue the thread._
 
 ## Design in one picture
 
@@ -83,25 +134,10 @@ curl http://localhost:8083/api/a2a/<namespace>/<name>/.well-known/agent-card.jso
 
 ## Slack app setup
 
-Create an app with Socket Mode. Minimal manifest:
+Create an app from the ready-made manifest at
+[`examples/slack-app-manifest.yaml`](examples/slack-app-manifest.yaml)
+(https://api.slack.com/apps → "Create New App" → "From a manifest"). Then:
 
-```yaml
-display_information:
-  name: OpenTag
-features:
-  bot_user:
-    display_name: OpenTag
-    always_online: true
-oauth_config:
-  scopes:
-    bot: [app_mentions:read, chat:write, im:history, im:read]
-settings:
-  event_subscriptions:
-    bot_events: [app_mention, message.im]
-  socket_mode_enabled: true
-```
-
-Then:
 1. Install the app to your workspace; copy the **Bot User OAuth Token** (`xoxb-…`).
 2. Generate an **App-Level Token** with `connections:write` (`xapp-…`).
 3. Invite the bot to a channel and note the channel id.
@@ -148,3 +184,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow.
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
+
+---
+
+OpenTag is an independent open-source project. It is **not affiliated with,
+sponsored by, or endorsed by Anthropic**. "Claude Tag" is referenced only to
+describe the shared-AI-teammate interaction pattern OpenTag is inspired by; any
+trademarks are the property of their respective owners.

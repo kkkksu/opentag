@@ -1,0 +1,35 @@
+# OpenTag Slack app manifest.
+#
+# Create a new app from this manifest at https://api.slack.com/apps
+# ("Create New App" → "From a manifest"). After creating it:
+#   1. Install the app to your workspace and copy the Bot User OAuth Token (xoxb-…).
+#   2. Under "Basic Information" → "App-Level Tokens", generate a token with the
+#      connections:write scope (xapp-…) — this enables Socket Mode.
+#   3. Invite the bot to a channel and note the channel id.
+#
+# Then set SLACK_BOT_TOKEN (xoxb-…) and SLACK_APP_TOKEN (xapp-…) and run OpenTag.
+
+display_information:
+  name: OpenTag
+  description: A shared AI teammate for your channels.
+
+features:
+  bot_user:
+    display_name: OpenTag
+    always_online: true
+
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read   # receive @OpenTag mentions
+      - chat:write          # post and edit replies
+      - im:history          # read direct messages
+      - im:read             # detect direct messages
+
+settings:
+  event_subscriptions:
+    bot_events:
+      - app_mention         # channel mentions
+      - message.im          # direct messages
+  socket_mode_enabled: true
+  org_deploy_enabled: false
